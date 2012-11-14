@@ -1,3 +1,5 @@
 .settings/
 .project
 .buildpath
+data/cache
+data/Base_Theme/compiled

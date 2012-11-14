@@ -1,0 +1,53 @@
+utils_recordbrowser_set_favorite = function(state,tab,id,element) {
+	$(element).innerHTML = '...';
+	new Ajax.Request('modules/Utils/RecordBrowser/favorites.php', {
+		method: 'post',
+		parameters:{
+			tab:Object.toJSON(tab),
+			id:Object.toJSON(id),
+			state:Object.toJSON(state),
+			element:Object.toJSON(element),
+			cid: Epesi.client_id
+		},
+		onSuccess:function(t) {
+			eval(t.responseText);
+		}
+	});
+};
+
+;utils_watchdog_set_subscribe = function(state,cat,id,element) {
+	$(element).innerHTML = '...';
+	new Ajax.Request('modules/Utils/Watchdog/subscribe.php', {
+		method: 'post',
+		parameters:{
+			cat:Object.toJSON(cat),
+			id:Object.toJSON(id),
+			state:Object.toJSON(state),
+			element:Object.toJSON(element),
+			cid: Epesi.client_id
+		},
+		onSuccess:function(t) {
+			eval(t.responseText);
+		}
+	});
+};
+
+;function fnSelect(obj) {
+    fnDeSelect();
+    if (document.selection) {
+        var range = document.body.createTextRange();
+        range.moveToElementText(obj);
+        range.select();
+    }
+    else if (window.getSelection) {
+        var range = document.createRange();
+        range.selectNode(obj);
+        window.getSelection().addRange(range);
+    }
+}
+
+function fnDeSelect() {
+    if (document.selection) document.selection.empty();
+    else if (window.getSelection)
+        window.getSelection().removeAllRanges();
+}

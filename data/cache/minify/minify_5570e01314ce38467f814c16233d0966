@@ -1,0 +1,686 @@
+var objs = new Array();
+var order = new Array();
+var now = 0;
+/*
+ * possible states:
+ *  -3 - uninitialized
+ *  -2 - closed with buttons
+ *  -1 - closed with text input
+ *   1 - showed with text input
+ *   2 - showed with buttons
+ */
+var state = {uninitialized: -3, closed: -1, showed: 1, buttons: 2};
+var c2fstate = state.uninitialized;
+var c2flabel = "";
+var c2fmessage = "";
+
+function initc2f(label, message) {
+    includeCSS('modules/Utils/RecordBrowser/click2fill.css');
+    objs = new Array();
+    order = new Array();
+    now = 0;
+    c2fstate = state.uninitialized;
+	c2flabel = label;
+	c2fmessage = message;
+}
+function includeCSS(p_file) {
+	var v_css  = document.createElement('link');
+	v_css.rel = 'stylesheet'
+	v_css.type = 'text/css';
+	v_css.href = p_file;
+	document.getElementsByTagName('head')[0].appendChild(v_css);
+}
+function changeSelection(x) {
+    if(objs[x] == true) {
+        document.getElementById('o'+x).innerHTML = '';
+        document.getElementById(x).style.color = 'black';
+        document.getElementById(x).style.backgroundColor = 'white';
+        objs[x] = false;
+    } else {
+        document.getElementById('o'+x).innerHTML = now+1;
+        document.getElementById(x).style.color = 'red';
+        document.getElementById(x).style.backgroundColor = 'yellow';
+        objs[x] = true;
+    }
+}
+function manipulateArray(x) {
+    if(objs[x] == true) {
+        var nr = document.getElementById('o'+x).innerHTML-1;
+        order.splice(nr,1);
+        for(var i = nr; i < order.length; i++) {
+            document.getElementById('o'+order[i]).innerHTML = i+1;
+        }
+        now--;
+        changeSelection(x);
+    } else {
+        order[now] = x;
+        changeSelection(x);
+        now++;
+    }
+}
+function c2f() {
+    if(c2fstate == state.uninitialized) {
+        if(document.getElementById("c2fBox") == undefined) {
+            alert("This template is not compatible with Click 2 Fill function");
+            return;
+        }
+        document.getElementById("c2fBox").innerHTML = '<textarea id="c2ftxt" rows="3" cols="50">'+c2fmessage+'</textarea><div id="c2fs"></div><input type="button" class="button" onclick="c2fScan()" value="'+c2flabel+'"/>';
+        c2fstate = state.closed;
+        var el = document.getElementsByTagName("input");
+        for(var i = 0; i < el.length; i++) {
+            if(el[i].type == 'text') {
+                var functxt = String(el[i].onclick);
+                if(functxt.indexOf('c2fstate') != -1) continue;
+                el[i].oldonclick = (el[i].onclick)?el[i].onclick:function(){};
+                el[i].onclick = function () {
+                    this.oldonclick();if(c2fstate == state.buttons && order.length > 0) this.value = copyText();
+                };
+            }
+        }
+        el = document.getElementsByTagName("textarea");
+        for(i = 0; i < el.length; i++) {
+            if(el[i].id != 'c2ftxt') {
+                el[i].oldonclick = (el[i].onclick)?el[i].onclick:function(){};
+                el[i].onclick = function() {
+                    this.oldonclick();if(c2fstate == state.buttons && order.length > 0) this.innerHTML = copyText();
+                };
+            }
+        }
+    }
+    if(c2fstate <= 0) { // state.closed or closed with buttons
+        document.getElementById("c2fBox").style.display = 'block';
+        var tmp = document.getElementById("c2ftxt");
+        tmp.focus();
+        tmp.select();
+        c2fstate = -c2fstate;
+    } else { // state.showed
+        document.getElementById("c2fBox").style.display = 'none';
+        c2fstate = -c2fstate;
+    }
+}
+function c2fScan() {
+    if(c2fstate == state.showed) {
+        var words = document.getElementById("c2ftxt").value.split(new RegExp("[, \n\t]"));
+        document.getElementById("c2fs").innerHTML = '';
+        for(var i = 0; i < words.length; i++) {
+            if(words[i].length == 0) continue;
+            var id = 'c2f'+i;
+            document.getElementById("c2fs").innerHTML += '<div id="'+id+'" onclick="manipulateArray(\''+id+'\')">'+words[i]+'</div><span id="o'+id+'"></span>';
+            objs[id] = false;
+        }
+        document.getElementById("c2fs").style.display = 'block';
+        document.getElementById("c2ftxt").style.display = 'none';
+        c2fstate = state.buttons;
+        now = 0;
+        order = new Array();
+    } else {
+        var tmp = document.getElementById("c2ftxt");
+        tmp.style.display = 'block';
+        tmp.focus();
+        tmp.select();
+        document.getElementById("c2fs").style.display = 'none';
+        c2fstate = state.showed;
+    }
+}
+function copyText() {
+    var arr = new Array();
+    for(var i = 0; i < order.length; i++) {
+        arr[i] = document.getElementById(order[i]).innerHTML;
+        changeSelection(order[i]);
+    }
+    order = new Array();
+    now = 0;
+    return(arr.join(' '));
+}
+;ms_remove_selected = function(myName, list_sep){
+	var tolist = document.getElementsByName(myName+"to[]")[0];
+	var fromlist = document.getElementsByName(myName+"from[]")[0];
+	var list_result = "";
+	var k = 0;
+	var i = 0;
+	while (k!=tolist.options.length) {
+		if (tolist.options[k].selected) {
+			while (i!=fromlist.options.length && fromlist.options[i].value<tolist.options[k].value) 
+				i++;
+			jj = fromlist.length;
+			fromlist.options[jj] = new Option();
+			for( j = jj; j > i; j-- ) {
+				fromlist.options[j].text = fromlist.options[j-1].text;
+				fromlist.options[j].value = fromlist.options[j-1].value;
+			}
+			fromlist.options[i].value = tolist.options[k].value;
+			fromlist.options[i].text = tolist.options[k].text;
+		} else {
+			list_result += list_sep+tolist.options[k].value;
+		}
+		k++;
+	}
+	for(i = (tolist.length-1); i >= 0; i--) {
+		if(tolist.options[i].selected == true) {
+			tolist.options[i] = null;
+		}
+	}
+	document.getElementsByName(myName)[0].value=list_result;
+};
+
+ms_add_selected = function(myName, list_sep){ 
+	var tolist = document.getElementsByName(myName+"to[]")[0];
+	var fromlist = document.getElementsByName(myName+"from[]")[0];
+	var list_result = "";
+	var k = 0;
+	var i = 0;
+	while (k!=fromlist.length) {
+		if (fromlist.options[k].selected) {
+			while(i < tolist.length && tolist.options[i].value<fromlist.options[k].value) 
+				i++;
+			jj = tolist.length;
+			tolist.options[jj] = new Option();
+			for( j = jj; j > i; j-- ) {
+				tolist.options[j].value = tolist.options[j-1].value;
+				tolist.options[j].text = tolist.options[j-1].text;
+			}
+			tolist.options[i].value = fromlist.options[k].value;
+			tolist.options[i].text = fromlist.options[k].text;
+		}
+		k++;
+	}
+	for(i = (fromlist.length-1); i >= 0; i--) {
+		if(fromlist.options[i].selected == true) {
+			fromlist.options[i] = null;
+		}
+	}
+	k = 0;
+	while (k!=tolist.length) { 
+		list_result += list_sep+tolist.options[k].value; 
+		k++; 
+	}
+	document.getElementsByName(myName)[0].value=list_result; 
+};
+
+ms_remove_all = function(myName, list_sep){ 
+	var tolist = document.getElementsByName(myName+"to[]")[0];
+	var fromlist = document.getElementsByName(myName+"from[]")[0];
+	var list_result = "";
+	var k = 0;
+	var i = 0;
+	while (k!=tolist.options.length) {
+		while (i!=fromlist.options.length && fromlist.options[i].value<tolist.options[k].value) 
+			i++;
+		jj = fromlist.length;
+		fromlist.options[jj] = new Option();
+		for( j = jj; j > i; j-- ) {
+			fromlist.options[j].text = fromlist.options[j-1].text;
+			fromlist.options[j].value = fromlist.options[j-1].value;
+		}
+		fromlist.options[i].value = tolist.options[k].value;
+		fromlist.options[i].text = tolist.options[k].text;
+		k++;
+	}
+	for(i = (tolist.length-1); i >= 0; i--) {
+		tolist.options[i] = null;
+	}
+	document.getElementsByName(myName)[0].value=list_result;
+};
+
+ms_add_all = function(myName, list_sep){ 
+	var tolist = document.getElementsByName(myName+"to[]")[0];
+	var fromlist = document.getElementsByName(myName+"from[]")[0];
+	var k = 0;
+	var i = 0;
+	var list_result = "";
+	while (k!=fromlist.length) {
+		while(i < tolist.length && tolist.options[i].value<fromlist.options[k].value) 
+			i++;
+		jj = tolist.length;
+		tolist.options[jj] = new Option();
+		for( j = jj; j > i; j-- ) {
+			tolist.options[j].value = tolist.options[j-1].value;
+			tolist.options[j].text = tolist.options[j-1].text;
+		}
+		tolist.options[i].value = fromlist.options[k].value;
+		tolist.options[i].text = fromlist.options[k].text;
+		k++;
+	}
+	for(i = (fromlist.length-1); i >= 0; i--) {
+		fromlist.options[i] = null;
+	}
+	k = 0;
+	while (k!=tolist.length) { 
+		list_result += list_sep+tolist.options[k].value; 
+		k++; 
+	}
+	document.getElementsByName(myName)[0].value=list_result; 
+};
+
+;automulti_remove_button_update = function (element) {
+	list = document.getElementsByName(element+"__display")[0];
+	i = 0;
+	while (i!=list.options.length) {
+		if (list.options[i].selected) {
+			$("automulti_button_style_"+element).setAttribute("class","button enabled");
+			break;
+		}
+		i++;
+	}
+	if (i==list.options.length) $("automulti_button_style_"+element).setAttribute("class","button disabled");
+}
+
+automulti_remove_button_action = function (element, list_sep) {
+	list = document.getElementsByName(element+"__display")[0];
+	val_holder = $(element+'__var_holder');
+	i = 0;
+	val_holder.value = "";
+	while (i!=list.options.length) {
+		if (list.options[i].selected) {
+			list.options[i] = null;
+		} else {
+			val_holder.value += list_sep;
+			val_holder.value += list.options[i].value;
+			i++;
+		}
+	}
+	automulti_remove_button_update(element);
+}
+
+automulti_on_hide = function (element, list_sep) {
+	var new_value=$("__autocomplete_id_"+element+"__search").value.split("__");
+	if (new_value && typeof(new_value[1])!="undefined") {
+		$("__autocomplete_id_"+element+"__search").value="";
+		automulti_add_value(element, list_sep, new_value[0], new_value[1]);
+	}
+}
+
+automulti_add_value = function (element, list_sep, value, label) {
+	list = document.getElementsByName(element+"__display")[0];
+	i = 0;
+	while (i!=list.options.length) {
+		if (list.options[i].value==value) {
+			value=null;
+			break;
+		}
+		i++;
+	}
+	if (value!=null) {
+		list.options[i] = new Option();
+		list.options[i].value = value;
+		list.options[i].text = label;
+		if(typeof iphone != "undefined") list.options[i].selected = true;
+		val_holder = $(element+'__var_holder');
+		val_holder.value = val_holder.value + list_sep + value;
+	}
+}
+
+;var Utils_PopupCalendar = function(link_proto, instance_id, mode,first_day_of_week, month_names, day_names) {
+		this.monthName = month_names;
+		this.link_proto = link_proto;
+		this.selected = 0;
+		this.instance_id = instance_id;
+		if(typeof mode == 'undefined') mode='day';
+		this.mode = mode;
+		this.first_day_of_week = first_day_of_week;
+		if(typeof first_day_of_week == 'undefined')
+			this.first_day_of_week = 0;
+		else
+			this.first_day_of_week = parseInt(this.first_day_of_week);
+
+		//show calendar
+		this.show = function(year, month, day) {
+			switch(this.mode) {
+				case 'year':
+					this.show_decade();
+					break;
+				case 'month':
+					this.show_year(year);
+					break;
+				case 'day':
+				default:
+					this.show_month(year, month, day);
+			}
+		}
+
+		// show a month
+		this.show_month = function( year, month, day ) {
+			if (!this.selected && year && month && day) {
+				this.selected = new Date();
+				this.selected.setDate(day);
+				this.selected.setMonth(month);
+				this.selected.setYear(year);
+			}
+			var days = day_names;
+            var daysInMonth = null;
+			var daysInWeek = 7;
+
+			// formatting constants
+			var TRstart = '<tr>';
+			var TRend = '</tr>';
+			var TDstartHL = '<td class="today">';
+			var TDstart = '<td>';
+			var TDend = '</td>';
+			var empty = '<td class="empty">&nbsp;</td>';
+
+			// preparing date
+			var Calendar = new Date();
+			var current_day = Calendar.getDate();
+			var current_month = Calendar.getMonth();
+			var current_year = Calendar.getFullYear();
+			if( typeof month == "undefined" ) { month = Calendar.getMonth(); } else { month = month * 1; }
+			var prev_month = month - 1;
+			var next_month = month + 1;
+			if( typeof year == "undefined" ) { year = Calendar.getFullYear(); } else { year = year * 1; }
+
+            if(year%400==0 || (year%100!=0 && year%4==0))
+            	daysInMonth = new Array(31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
+            else
+            	daysInMonth = new Array(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
+
+			year_real = year;
+			var prev_year = year;
+			if(prev_month < 0) { prev_month = 11; prev_year--; }
+			var next_year = year;
+			if(next_month > 11) { next_month = 0; next_year++; }
+
+			// filling header
+			var header_string = '<table class="menu" cellspacing="0" cellpadding="0" border="0"><tr>';
+			header_string += '<td class="prev"><a href="javascript:void(0)" onClick="datepicker_'+this.instance_id+'.show_month(\''+prev_year+'\', \''+prev_month+'\')">&lt;&lt</a></td>';
+			header_string += '<td class="label"><a href="javascript:void(0)" onClick="datepicker_'+this.instance_id+'.show_year(\''+year+'\')">'+this.monthName[month] + ' ' + year_real+'</a></td>';
+			header_string += '<td class="next"><a href="javascript:void(0)" onClick="datepicker_'+this.instance_id+'.show_month(\''+next_year+'\', \''+next_month+'\')">&gt;&gt</a></td>';
+			header_string += '<td class="close"><a href="javascript:void(0)" onClick="$(\'datepicker_'+this.instance_id+'_calendar\').toggle()">X</a></td>';
+			header_string += '</tr></table>';
+			$('datepicker_'+this.instance_id+'_header').innerHTML = header_string;
+
+			// filling month
+			Calendar.setDate(1);
+			Calendar.setMonth( month );
+			Calendar.setYear( year_real );
+			var cal = '';
+			cal += '<table cellspacing="0" cellpadding="0" border="0" class="small">' + TRstart;
+
+			// days' names
+			for(index = 0; index < 7; index++) {
+				cal += '<td class="daysHeader">' + days[(index+this.first_day_of_week)%7] + TDend;
+			}
+			cal += TRend + TRstart+'<td class="spacerTop" colspan="'+daysInWeek+'"><p class="pt"></p></td>'+TRend+TRstart;
+
+			// blanks before first day of the month
+			var tmp = Calendar.getDay();
+			if( tmp == 0 ) { tmp = 7; }
+			for(index = this.first_day_of_week; index < tmp ; index++) {
+//			for(index = 1; index < tmp ; index++) {
+				cal += empty;
+			}
+			var weekday;
+			for(index = 0; index < daysInMonth[month]; index++)	{
+				weekday = Calendar.getDay();
+				//if(weekday == 1) { cal += TRstart; }
+				if(weekday == this.first_day_of_week) { cal += TRstart; }
+
+				cal += '<td class="';
+				if( (current_day == Calendar.getDate()) && (current_month == month) && (current_year == year) )
+					cal += 'today ';
+				if( weekday % 6 < 1 )
+					cal += 'weekend ';
+				if( this.selected &&
+					(Calendar.getDate() == this.selected.getDate()) && 
+					(Calendar.getMonth() == this.selected.getMonth()) && 
+					(Calendar.getFullYear() == this.selected.getFullYear()) )
+					cal += 'selected ';
+				cal += '">';
+				//cal += '<a class=day href="javascript:get_date('+year_real+', '+(month+1)+', '+Calendar.getDate()+', \''+this.field+'\', \''+this.format+'\')">';
+				var prep_link = this.link_proto.replace("__YEAR__", year_real);
+				prep_link = prep_link.replace("__MONTH__", (month+1));
+				prep_link = prep_link.replace("__DAY__", Calendar.getDate());
+				cal += '<div class="day"><a href="javascript:void(0)" onClick="datepicker_'+this.instance_id+'.selected = new Date('+Calendar.getFullYear()+','+Calendar.getMonth()+','+Calendar.getDate()+');datepicker_'+this.instance_id+'.show_month('+year+','+month+','+day+');'+prep_link+'">';
+				cal += Calendar.getDate();
+				cal += '</a></div>' + TDend;
+
+//				if(weekday == 0) { cal += TRend; }
+				if(weekday == (this.first_day_of_week+6)%7) { cal += TRend; }
+				Calendar.setDate(Calendar.getDate()+1);
+			} // end for loop
+
+			if( weekday < daysInWeek ) {
+				for(index = weekday+1; index < (Calendar.getDay()+6)%7; index++) {
+					cal += empty;
+				}
+				cal += TRend+TRstart+'<td class=spacerBottom colspan='+daysInWeek+'><p class=pt></p></td>'+TRend;
+			}
+			cal += '</TABLE>';
+			// and final solution
+			$('datepicker_'+this.instance_id+'_view').innerHTML = cal;
+		}
+
+		//show a year
+		this.show_year = function( year ) {
+			// formatting constants
+			var TRstart = '<tr>';
+			var TRend = '</tr>';
+			var TDstartHL = '<td class=today>';
+			var TDstart = '<td>';
+			var TDend = '</td>';
+
+			// preparing date
+			var Calendar = new Date();
+			var current_month = Calendar.getMonth();
+			var current_year = Calendar.getFullYear();
+			if( !year ) { year = Calendar.getFullYear(); } else { year = year * 1; }
+			year_real = year;
+			var prev_year = year - 1;
+			var next_year = year + 1;
+
+			// filling header
+			var header_string = '<table class="menu" cellspacing="0" cellpadding="0" border="0"><tr>';
+			header_string += '<td class="prev"><a href="javascript:void(0)" onClick="datepicker_'+this.instance_id+'.show_year(\''+prev_year+'\')">&lt;&lt</a></td>';
+			header_string += '<td class="label"><a href="javascript:void(0)" onClick="datepicker_'+this.instance_id+'.show_decade(\''+(year - (year%10))+'\')">'+ year_real+'</a></td>';
+			header_string += '<td class="next"><a href="javascript:void(0)" onClick="datepicker_'+this.instance_id+'.show_year(\''+next_year+'\')">&gt;&gt</a></td>';
+			header_string += '<td class="close"><a href="javascript:void(0)" onClick="$(\'datepicker_'+this.instance_id+'_calendar\').toggle()">X</a></td>';
+			header_string += '</tr></table>';
+			document.getElementById('datepicker_'+this.instance_id+'_header').innerHTML = header_string;
+
+			// filling year with months
+			var cal = '';
+			cal += '<table cellspacing="0" cellpadding="0" border="0" class="small">';
+			for(index = 0; index < 12; index++)	{
+				if( index % 3 == 0 ) { cal += TRstart; }
+
+				cal += '<td ';
+				if( (current_month == index) && (current_year == year) ) {
+						cal += ' class=today>';
+				} else {
+					cal += '>';
+				}
+				var prep_link;
+				if(this.mode!='month') {
+					prep_link = 'datepicker_'+this.instance_id+'.show_month('+year+', '+index+')';
+				} else {
+					prep_link = this.link_proto.replace("__YEAR__", year_real);
+					prep_link = prep_link.replace("__MONTH__", (index+1));
+					prep_link = prep_link.replace("__DAY__", '1');
+				}
+				cal += '<div class="month"><a href="javascript:void(0)" onClick="'+prep_link+'">';
+				cal += this.monthName[index];
+				cal += '</a></div>' + TDend;
+
+				if(index % 3 == 2) { cal += TRend; }
+			} // end for loop
+
+			cal += '</TABLE>';
+			// and final solution
+			document.getElementById('datepicker_'+this.instance_id+'_view').innerHTML = cal;
+		}
+
+		//show a decade
+		this.show_decade = function( decade ) {
+			// formatting constants
+			var TRstart = '<tr>';
+			var TRend = '</tr>';
+			var TDstartHL = '<td class=today>';
+			var TDstart = '<td>';
+			var TDend = '</td>';
+
+			// preparing date
+			var Calendar = new Date();
+			var current_year = Calendar.getFullYear();
+			if( !decade ) { decade = Calendar.getFullYear(); } else { decade = decade * 1; }
+			decade_real = decade;
+			var prev_decade = decade - 10;
+			var next_decade = decade + 10;
+
+			// filling header
+			var header_string = '<table class="menu"  cellspacing="0" cellpadding="0" border="0"><tr>';
+			header_string += '<td class="prev"><a href="javascript:void(0)" onClick="datepicker_'+this.instance_id+'.show_decade(\''+prev_decade+'\')">&lt;&lt</a></td>';
+			header_string += '<td class="label"><a href="javascript:void(0)" onClick="datepicker_'+this.instance_id+'.show_century(\''+(decade - (decade%100))+'\')">'+ decade_real + ' - ' + (decade_real+10) + '</a></td>';
+			header_string += '<td class="next"><a href="javascript:void(0)" onClick="datepicker_'+this.instance_id+'.show_decade(\''+next_decade+'\')">&gt;&gt</a></td>';
+			header_string += '<td class="close"><a href="javascript:void(0)" onClick="$(\'datepicker_'+this.instance_id+'_calendar\').toggle()">X</a></td>';
+			header_string += '</tr></table>';
+			document.getElementById('datepicker_'+this.instance_id+'_header').innerHTML = header_string;
+
+			// filling year with months
+			var cal = '';
+			cal += '<table cellspacing="0" cellpadding="0" border="0" class="small">';
+			for(index = 0; index < 12; index++)	{
+				if( index % 3 == 0 ) { cal += TRstart; }
+
+				cal += '<td ';
+				if( current_year == decade + index -1 ) {
+						cal += ' class=today>';
+				} else {
+					cal += '>';
+				}
+				var prep_link;
+				if(this.mode!='year') {
+					prep_link = 'datepicker_'+this.instance_id+'.show_year('+(decade+index-1)+')';
+				} else {
+					prep_link = this.link_proto.replace("__YEAR__", (decade_real+index-1));
+					prep_link = prep_link.replace("__MONTH__", '1');
+					prep_link = prep_link.replace("__DAY__", '1');
+				}
+				cal += '<div class="month"><a href="javascript:void(0)" onClick="'+prep_link+'">';
+				cal += (decade_real + index - 1);
+				cal += '</a></div>' + TDend;
+
+				if(index % 3 == 2) { cal += TRend; }
+			} // end for loop
+
+			cal += '</TABLE>';
+			// and final solution
+			document.getElementById('datepicker_'+this.instance_id+'_view').innerHTML = cal;
+		}
+
+		//show a century
+		this.show_century = function( century ) {
+			// formatting constants
+			var TRstart = '<tr>';
+			var TRend = '</tr>';
+			var TDstartHL = '<td class=today>';
+			var TDstart = '<td>';
+			var TDend = '</td>';
+
+			// preparing date
+			var Calendar = new Date();
+			var current_year = Calendar.getFullYear();
+			if( !century ) { century = Calendar.getFullYear(); } else { century = century * 1; }
+			century_real = century;
+			var prev_century = century - 100;
+			var next_century = century + 100;
+
+			// filling header
+			var header_string = '<table class="menu" cellspacing="0" cellpadding="0" border="0"><tr>';
+			header_string += '<td class="prev"><a href="javascript:void(0)" onClick="datepicker_'+this.instance_id+'.show_century(\''+prev_century+'\')">&lt;&lt</a></td>';
+			header_string += '<td class="label">'+ century_real + ' - ' + (century_real+100) + '</td>';
+			header_string += '<td class="next"><a href="javascript:void(0)" onClick="datepicker_'+this.instance_id+'.show_century(\''+next_century+'\')">&gt;&gt</a></td>';
+			header_string += '<td class="close"><a href="javascript:void(0)" onClick="$(\'datepicker_'+this.instance_id+'_calendar\').toggle()">X</a></td>';
+			header_string += '</tr></table>';
+			document.getElementById('datepicker_'+this.instance_id+'_header').innerHTML = header_string;
+
+			// filling year with months
+			var cal = '';
+			cal += '<table cellspacing="0" cellpadding="0" border="0" class="small">';
+			for(index = 0; index < 120; index += 10)	{
+				if( index % 30 == 0 ) { cal += TRstart; }
+
+				cal += '<td ';
+				if( (current_year > century + index - 10) && (century + index > current_year) ) {
+						cal += ' class=today>';
+				} else {
+					cal += '>';
+				}
+				cal += '<div class="month"><a href="javascript:void(0)" onClick="datepicker_'+this.instance_id+'.show_decade(' + (century + index - 10) + ')">';
+				cal += (century_real + index - 10) + '&nbsp;-&nbsp;' + (century_real + index);
+				cal += '</a></div>' + TDend;
+
+				if(index % 30 == 20) { cal += TRend; }
+			} // end for loop
+
+			cal += '</TABLE>';
+			// and final solution
+			document.getElementById('datepicker_'+this.instance_id+'_view').innerHTML = cal;
+		}
+	}
+
+;var Utils_PopupCalendarDatePicker = {
+format:null,
+re:null,
+validate: function(ev,f) {
+	var elem = Event.element(ev);
+	var val = elem.value;
+	var key = ev.which;
+	if(!(key>=32 && key<=126)) return;
+	var car = this.get_caret(elem);
+	val = val.substring(0,car)+String.fromCharCode(key)+val.substring(car);
+	this.init_re(f);
+	if(!this.re.test(val))
+		Event.stop(ev);
+	if(!this.re.test(elem.value)) {
+		alert('Invalid date - clearing');
+		elem.value='';
+	}
+},
+validate_blur: function(ev,f) {
+	var elem = Event.element(ev);
+	this.init_re(f);
+	if(!this.re.test(elem.value)) {
+		alert('Invalid date - clearing');
+		elem.value='';
+	}
+},
+init_re: function(f) {
+	if(this.format!=f) {
+		this.re = new RegExp();
+//		alert(this.format2regexp(f));
+		this.re.compile('^'+this.format2regexp(f)+'$');
+		this.format=f;
+	}
+},
+format2regexp: function(f) {
+	return f.replace(new RegExp('^([%a-zA-Z/]+)/([%a-zA-Z/]+)$','g'),"$1(/$2)?")
+		.replace(new RegExp('^([%a-zA-Z/]+)/([%a-zA-Z/?()]+)$','g'),"$1(/$2)?")
+		.replace(new RegExp('^([%a-zA-Z-]+)-([%a-zA-Z-]+)$','g'),"$1(-$2)?")
+		.replace(new RegExp('^([%a-zA-Z-]+)-([%a-zA-Z-?()]+)$','g'),"$1(-$2)?")
+		.replace(new RegExp('^([%a-zA-Z ,]+) ([%a-zA-Z ]+)$','g'),"$1( $2)?")
+		.replace(new RegExp('^([%a-zA-Z ]+),([%a-zA-Z ?()]+)$','g'),"$1(,$2)?")
+		.replace(new RegExp('^([%a-zA-Z ]+) ([%a-zA-Z ?(),]+)$','g'),"$1( $2)?")
+		.replace('%d','[0-3]?[0-9]?')
+		.replace('%m','[0-1]?[0-9]?')
+		.replace('%y','[0-9]{0,2}')
+		.replace('%Y','[0-9]{0,4}')
+		.replace('%b','[a-zA-ZáéíóäëöúàèììùąśżźćółńĄŚŻŹĆÓŁŃ]{0,3}')
+		.replace('%B','[a-zA-ZáéíóäëöúàèììùąśżźćółńĄŚŻŹĆÓŁŃ]+');
+},
+// get_caret method based on work of:
+// Author: Mihai Bazon, 2006
+// http://www.bazon.net/mishoo/
+// This code is (c) Dynarch.com, 2006.
+// GNU LGPL. (www.gnu.org/licenses/lgpl.html)
+get_caret: function(input) {
+	if (Prototype.Browser.Gecko)
+		return input.selectionEnd;
+	var range = document.selection.createRange();
+	var isCollapsed = range.compareEndPoints("StartToEnd", range) == 0;
+	if (!isCollapsed)
+		range.collapse(false);
+	var b = range.getBookmark();
+	return b.charCodeAt(2) - 2;
+}
+}
+
+

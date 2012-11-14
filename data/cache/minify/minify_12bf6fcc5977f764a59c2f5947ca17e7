@@ -1,0 +1,106 @@
+var mentioned = new Array;
+var base_setup__reinstall_warning = '';
+var base_setup__uninstall_warning = '';
+function get_deps(mod) {
+	var arr = new Array;
+	if(mentioned[mod] == undefined) {
+		arr.push(mod);
+		mentioned[mod] = true;
+	}
+	if(deps[mod] == undefined) return arr;
+	for(var i = 0; i < deps[mod].length; i++) {
+		arr = arr.concat(get_deps(deps[mod][i]));
+	}
+	return arr;
+};
+function show_alert(x, mod) {
+	if(x.options[x.selectedIndex].value == -2) {
+		if(!showed) alert(base_setup__reinstall_warning);
+		showed=true;
+		return;
+	}
+	if(x.selectedIndex != 0) {
+		original_select[mod] = x.options[x.selectedIndex].value;
+		return;
+	}
+	mentioned = new Array;
+	var arr = get_deps(mod);
+	if(arr.length == 1) return;
+	var str = arr.length < 11 ? " - "+arr.join("\n - ") : arr.join(", ");
+	if(confirm(base_setup__uninstall_warning + "\n" + str) == false) {
+		var ind = 0;
+		for(; ind < x.options.length; ind++) if(x.options[ind].value == original_select[mod]) break;
+		x.selectedIndex = ind;
+		return;
+	}
+	for(var i = 0; i < arr.length; i++) {
+		var el = document.getElementsByName("installed["+arr[i]+"]")[0];
+		el.selectedIndex=0;
+	}
+}
+
+;	
+	is_collapsed = new Array();
+	
+	utils_tree_reset = function( id ) {
+		is_collapsed[id] = new Array();
+	}
+	
+	utils_tree_expand_all = function(id, sub) {
+		for( i = 0; i < sub; i++) {
+			is_collapsed[id][i] = 0;
+			if($('utils_tree_'+id+'_'+i)) {
+				$('utils_tree_'+id+'_'+i).style.display = "block";
+				$('utils_tree_opener_img_'+id+'_'+i).src = "modules/Utils/Tree/theme/opener_active_open.gif";
+			}
+		}
+		//$('tree_expand_all_'+id).innerHTML = 'Collapse All';
+	}
+	utils_tree_collapse_all = function(id, sub) {
+		for( i = 0; i < sub; i++) {
+			is_collapsed[id][i] = 1;
+			if($('utils_tree_'+id+'_'+i)) {
+				$('utils_tree_'+id+'_'+i).style.display = "none";
+				$('utils_tree_opener_img_'+id+'_'+i).src = "modules/Utils/Tree/theme/opener_active_closed.gif";
+			}
+		}
+		//$('tree_expand_all_'+id).innerHTML = 'Expand All';
+	}
+	
+	tree_node_visibility_toggle = function( id, sub ) {
+		if($('utils_tree_'+id+'_'+sub)) {
+			if( is_collapsed[id][sub] == 0 ) {
+				is_collapsed[id][sub] = 1;
+				$('utils_tree_'+id+'_'+sub).style.display = "none";
+				$('utils_tree_opener_img_'+id+'_'+sub).src = "modules/Utils/Tree/theme/opener_active_closed.gif";
+			} else {
+				is_collapsed[id][sub] = 0;
+				$('utils_tree_'+id+'_'+sub).style.display = "block";
+				$('utils_tree_opener_img_'+id+'_'+sub).src = "modules/Utils/Tree/theme/opener_active_open.gif";
+			}
+		}
+	}
+	tree_node_visibility_show = function( id, sub ) {
+		if($('utils_tree_'+id+'_'+sub)) {
+			is_collapsed[id][sub] = 0;
+			$('utils_tree_'+id+'_'+sub).style.display = "block";
+			$('utils_tree_opener_img_'+id+'_'+sub).src = "modules/Utils/Tree/theme/opener_active_open.gif";
+		}
+	}
+	
+	utils_tree_open = function(id, path) {
+		for(i = 0; i < path.size(); i++) {
+			tree_node_visibility_show(id, path[i]);
+		}
+	}
+	
+	utils_tree_hl = function( i ) { 
+		//i.style.background = "white"; i.style.padding = "0px"; i.style.border = "1px solid black"; 
+		i.className = 'utils_tree_node_hover';
+	}
+	utils_tree_rg = function( i ) { 
+		//i.style.background = "transparent"; i.style.padding = "1px"; i.style.border = "none"; 
+		i.className = 'utils_tree_node';
+	};
+	
+			
